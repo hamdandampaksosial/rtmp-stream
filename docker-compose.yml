@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  nginx-rtmp:
+    image: tiangolo/nginx-rtmp:latest
+    container_name: nginx-rtmp
+    ports:
+      - "1935:1935"  # RTMP port
+      - "8080:8080"  # HLS port
+      - "8081:8081"  # Admin port
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./hls:/tmp/hls
+      - ./recordings:/tmp/recordings
+      - ./logs:/var/log/nginx
+    restart: unless-stopped
+    networks:
+      - rtmp-network
+
+  rtmp-controller:
+    build: .
+    container_name: rtmp-controller
+    ports:
+      - "3000:3000"  # Web interface port
+    depends_on:
+      - nginx-rtmp
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    volumes:
+      - ./logs:/app/logs
+    restart: unless-stopped
+    networks:
+      - rtmp-network
+
+networks:
+  rtmp-network:
+    driver: bridge
+
+volumes:
+  hls:
+  recordings:
+  logs:
