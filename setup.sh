@@ -73,12 +73,24 @@ if [ -f "/etc/nginx/nginx.conf" ]; then
     sudo cp /etc/nginx/nginx.conf /etc/nginx/nginx.conf.backup
 fi
 
-# Copy nginx configuration
+# Configure nginx with compatibility check
 echo "⚙️  Configuring nginx..."
-sudo cp nginx.conf /etc/nginx/nginx.conf
+echo "🔍 Testing nginx configurations..."
 
-# Test nginx configuration
-echo "🔍 Testing nginx configuration..."
+# Make nginx-test.sh executable
+chmod +x nginx-test.sh
+
+# Test configurations and apply the working one
+if ./nginx-test.sh test > /dev/null 2>&1; then
+    echo "✅ Using full nginx configuration"
+    sudo cp nginx.conf /etc/nginx/nginx.conf
+else
+    echo "⚠️  Using minimal nginx configuration (full config has compatibility issues)"
+    sudo cp nginx-minimal.conf /etc/nginx/nginx.conf
+fi
+
+# Test the applied configuration
+echo "🔍 Testing applied nginx configuration..."
 sudo nginx -t
 
 # Create systemd service file

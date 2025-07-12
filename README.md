@@ -133,17 +133,24 @@ A modern web-based RTMP streaming controller that receives streams from nginx an
    - Or manually: `rm -rf node_modules package-lock.json && npm cache clean --force && npm install`
    - Use `Dockerfile.multistage` for problematic environments
 
-2. **No preview showing:**
+2. **nginx error: unknown directive "exec_kill" or similar:**
+   - Your nginx-rtmp module doesn't support all directives
+   - Use minimal config: `./nginx-test.sh minimal`
+   - Or test configurations: `./nginx-test.sh test`
+   - Install nginx-rtmp module: `sudo apt-get install libnginx-mod-rtmp`
+
+3. **No preview showing:**
    - Check if nginx is running and configured correctly
    - Verify RTMP stream is being sent to `rtmp://localhost:1935/live/stream`
    - Check browser console for HLS errors
+   - Test nginx config: `./nginx-test.sh test`
 
-3. **Stream won't start:**
+4. **Stream won't start:**
    - Verify YouTube RTMP URL and stream key are correct
    - Check if ffmpeg is installed and accessible
    - Review server logs for error messages
 
-4. **Permission denied errors:**
+5. **Permission denied errors:**
    - Ensure nginx has write permissions to `/tmp/hls` and `/tmp/recordings`
    - Check if ports 1935, 3000, and 8080 are available
 
@@ -224,4 +231,13 @@ npm install
 
 # Full build process
 ./build.sh all
+
+# Test nginx configurations
+./nginx-test.sh test
+
+# Apply minimal nginx config (most compatible)
+./nginx-test.sh minimal
+
+# Apply full nginx config
+./nginx-test.sh full
 ```
