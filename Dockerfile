@@ -1,7 +1,7 @@
 FROM node:18-alpine
 
-# Install ffmpeg
-RUN apk add --no-cache ffmpeg
+# Install ffmpeg and curl for health checks
+RUN apk add --no-cache ffmpeg curl
 
 # Create app directory
 WORKDIR /app
@@ -10,7 +10,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies
-RUN npm ci --only=production
+RUN npm ci --omit=dev
 
 # Copy application code
 COPY . .

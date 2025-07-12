@@ -128,17 +128,21 @@ A modern web-based RTMP streaming controller that receives streams from nginx an
 
 ### Common Issues
 
-1. **No preview showing:**
+1. **Docker build fails with npm ci error:**
+   - Make sure `package-lock.json` exists (run `npm install` first)
+   - This has been fixed in the latest version
+
+2. **No preview showing:**
    - Check if nginx is running and configured correctly
    - Verify RTMP stream is being sent to `rtmp://localhost:1935/live/stream`
    - Check browser console for HLS errors
 
-2. **Stream won't start:**
+3. **Stream won't start:**
    - Verify YouTube RTMP URL and stream key are correct
    - Check if ffmpeg is installed and accessible
    - Review server logs for error messages
 
-3. **Permission denied errors:**
+4. **Permission denied errors:**
    - Ensure nginx has write permissions to `/tmp/hls` and `/tmp/recordings`
    - Check if ports 1935, 3000, and 8080 are available
 
