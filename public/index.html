@@ -41,6 +41,13 @@
                             <span class="value" id="inputUrl">rtmp://localhost:1935/live/stream</span>
                         </div>
                         <div class="info-item">
+                            <span class="label">RTMP Status:</span>
+                            <span class="value" id="rtmpStatus">Checking...</span>
+                            <button class="btn btn-small" id="refreshRtmpBtn" onclick="checkRtmpStatus()">
+                                <i class="fas fa-refresh"></i>
+                            </button>
+                        </div>
+                        <div class="info-item">
                             <span class="label">Resolution:</span>
                             <span class="value" id="resolution">N/A</span>
                         </div>

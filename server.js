@@ -24,7 +24,7 @@ app.use(express.static('public'));
 let streamingProcess = null;
 let isStreaming = false;
 let streamConfig = {
-  inputUrl: 'rtmp://localhost:1935/live/stream',
+  inputUrl: process.env.RTMP_INPUT_URL || 'rtmp://localhost:1935/live/stream',
   youtubeUrl: '',
   youtubeKey: ''
 };
@@ -48,11 +48,14 @@ io.on('connection', (socket) => {
   });
 
   // Handle start streaming
-  socket.on('startStream', () => {
+  socket.on('startStream', async () => {
     if (!isStreaming && streamConfig.youtubeUrl && streamConfig.youtubeKey) {
-      startYouTubeStream();
-      socket.emit('streamStarted', 'Stream started successfully');
-      io.emit('streamStatus', { isStreaming: true, config: streamConfig });
+      try {
+        await startYouTubeStream();
+        socket.emit('streamStarted', 'Stream started successfully');
+      } catch (error) {
+        socket.emit('error', `Failed to start stream: ${error.message}`);
+      }
     } else if (isStreaming) {
       socket.emit('error', 'Stream is already running');
     } else {
@@ -76,16 +79,61 @@ io.on('connection', (socket) => {
   });
 });
 
+// Function to check if RTMP input is available
+function checkRtmpInput() {
+  return new Promise((resolve, reject) => {
+    const testProcess = ffmpeg(streamConfig.inputUrl)
+      .inputOptions([
+        '-t', '1',  // Test for 1 second
+        '-f', 'null'
+      ])
+      .output('-')
+      .on('start', () => {
+        console.log('Testing RTMP input connection...');
+      })
+      .on('end', () => {
+        console.log('RTMP input is available');
+        resolve(true);
+      })
+      .on('error', (err) => {
+        console.error('RTMP input test failed:', err.message);
+        reject(err);
+      })
+      .run();
+      
+    // Timeout after 10 seconds
+    setTimeout(() => {
+      testProcess.kill('SIGKILL');
+      reject(new Error('RTMP input test timeout'));
+    }, 10000);
+  });
+}
+
 // Start YouTube streaming using ffmpeg
-function startYouTubeStream() {
+async function startYouTubeStream() {
   const outputUrl = `${streamConfig.youtubeUrl}/${streamConfig.youtubeKey}`;
+  
+  try {
+    // Check if RTMP input is available
+    await checkRtmpInput();
+    console.log('RTMP input verified, starting stream...');
+  } catch (error) {
+    const errorMsg = `RTMP input not available: ${error.message}. Please check:\n` +
+                    `1. nginx-rtmp server is running\n` +
+                    `2. Stream is being sent to ${streamConfig.inputUrl}\n` +
+                    `3. No firewall blocking port 1935`;
+    console.error(errorMsg);
+    io.emit('streamError', errorMsg);
+    return;
+  }
   
   streamingProcess = ffmpeg(streamConfig.inputUrl)
     .inputOptions([
       '-re',  // Read input at its native frame rate
       '-fflags', 'nobuffer',
       '-flags', 'low_delay',
-      '-strict', 'experimental'
+      '-strict', 'experimental',
+      '-timeout', '10000000'  // 10 second timeout
     ])
     .outputOptions([
       '-c:v', 'libx264',          // Video codec
@@ -110,7 +158,15 @@ function startYouTubeStream() {
     .on('error', (err) => {
       console.error('FFmpeg error:', err);
       isStreaming = false;
-      io.emit('streamError', err.message);
+      
+      let errorMessage = err.message;
+      if (err.message.includes('Connection refused')) {
+        errorMessage = 'Cannot connect to RTMP input. Please check if nginx-rtmp is running and stream is active.';
+      } else if (err.message.includes('No such file or directory')) {
+        errorMessage = 'FFmpeg not found. Please install FFmpeg.';
+      }
+      
+      io.emit('streamError', errorMessage);
       io.emit('streamStatus', { isStreaming: false, config: streamConfig });
     })
     .on('end', () => {
@@ -144,6 +200,58 @@ app.post('/api/config', (req, res) => {
   streamConfig.youtubeUrl = youtubeUrl;
   streamConfig.youtubeKey = youtubeKey;
   res.json({ message: 'Configuration updated successfully' });
+});
+
+// Check RTMP input status
+app.get('/api/rtmp-status', async (req, res) => {
+  try {
+    await checkRtmpInput();
+    res.json({ 
+      status: 'available', 
+      inputUrl: streamConfig.inputUrl,
+      message: 'RTMP input is available' 
+    });
+  } catch (error) {
+    res.status(503).json({ 
+      status: 'unavailable', 
+      inputUrl: streamConfig.inputUrl,
+      error: error.message,
+      suggestions: [
+        'Check if nginx-rtmp server is running',
+        'Verify stream is being sent to ' + streamConfig.inputUrl,
+        'Check firewall settings for port 1935',
+        'Ensure nginx RTMP module is properly configured'
+      ]
+    });
+  }
+});
+
+// System health check
+app.get('/api/health', (req, res) => {
+  const health = {
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    services: {
+      nodejs: 'running',
+      ffmpeg: null,
+      rtmp: null
+    },
+    config: {
+      inputUrl: streamConfig.inputUrl,
+      hasYouTubeConfig: !!(streamConfig.youtubeUrl && streamConfig.youtubeKey)
+    }
+  };
+
+  // Check FFmpeg
+  try {
+    require('child_process').execSync('ffmpeg -version', { stdio: 'ignore' });
+    health.services.ffmpeg = 'available';
+  } catch (error) {
+    health.services.ffmpeg = 'missing';
+    health.status = 'degraded';
+  }
+
+  res.json(health);
 });
 
 // Serve the main page
