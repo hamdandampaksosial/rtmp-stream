@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RTMP YouTube Stream Controller</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1><i class="fas fa-broadcast-tower"></i> RTMP YouTube Stream Controller</h1>
+            <div class="status-indicator">
+                <div class="status-dot" id="statusDot"></div>
+                <span id="statusText">Disconnected</span>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <div class="left-panel">
+                <div class="preview-section">
+                    <h2><i class="fas fa-eye"></i> Stream Preview</h2>
+                    <div class="preview-container">
+                        <video id="previewVideo" muted playsinline>
+                            <source src="http://localhost:8080/live/stream.m3u8" type="application/x-mpegURL">
+                            Your browser does not support the video tag.
+                        </video>
+                        <div class="preview-overlay" id="previewOverlay">
+                            <div class="preview-message">
+                                <i class="fas fa-video-slash"></i>
+                                <p>No stream available</p>
+                                <small>Start your RTMP stream to nginx server</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="preview-info">
+                        <div class="info-item">
+                            <span class="label">Input URL:</span>
+                            <span class="value" id="inputUrl">rtmp://localhost:1935/live/stream</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="label">Resolution:</span>
+                            <span class="value" id="resolution">N/A</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="label">Bitrate:</span>
+                            <span class="value" id="bitrate">N/A</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="right-panel">
+                <div class="config-section">
+                    <h2><i class="fab fa-youtube"></i> YouTube Configuration</h2>
+                    <form id="configForm">
+                        <div class="form-group">
+                            <label for="youtubeUrl">YouTube RTMP URL:</label>
+                            <input type="url" id="youtubeUrl" placeholder="rtmp://a.rtmp.youtube.com/live2" required>
+                            <small class="form-help">Usually: rtmp://a.rtmp.youtube.com/live2</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="youtubeKey">Stream Key:</label>
+                            <input type="password" id="youtubeKey" placeholder="Your YouTube stream key" required>
+                            <small class="form-help">Found in YouTube Studio → Go Live → Stream</small>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Save Configuration
+                        </button>
+                    </form>
+                </div>
+
+                <div class="control-section">
+                    <h2><i class="fas fa-cogs"></i> Stream Controls</h2>
+                    <div class="control-buttons">
+                        <button id="startBtn" class="btn btn-success" disabled>
+                            <i class="fas fa-play"></i> Start Stream
+                        </button>
+                        <button id="stopBtn" class="btn btn-danger" disabled>
+                            <i class="fas fa-stop"></i> Stop Stream
+                        </button>
+                    </div>
+                    <div class="stream-status">
+                        <div class="status-item">
+                            <span class="label">Status:</span>
+                            <span class="value" id="streamStatus">Ready</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="label">Duration:</span>
+                            <span class="value" id="streamDuration">00:00:00</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="label">Target:</span>
+                            <span class="value" id="streamTarget">Not configured</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="logs-section">
+                    <h2><i class="fas fa-terminal"></i> Stream Logs</h2>
+                    <div class="logs-container" id="logsContainer">
+                        <div class="log-entry info">
+                            <span class="timestamp"></span>
+                            <span class="message">System ready</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <script src="script.js"></script>
+</body>
+</html>
