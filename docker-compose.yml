@@ -9,13 +9,19 @@ services:
       - "8080:8080"  # HLS port
       - "8081:8081"  # Admin port
     volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf
-      - ./hls:/tmp/hls
-      - ./recordings:/tmp/recordings
-      - ./logs:/var/log/nginx
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - hls_data:/tmp/hls
+      - recordings_data:/tmp/recordings
+      - logs_data:/var/log/nginx
     restart: unless-stopped
     networks:
       - rtmp-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   rtmp-controller:
     build: .
@@ -23,21 +29,29 @@ services:
     ports:
       - "3000:3000"  # Web interface port
     depends_on:
-      - nginx-rtmp
+      nginx-rtmp:
+        condition: service_healthy
     environment:
       - NODE_ENV=production
       - PORT=3000
+      - RTMP_INPUT_URL=rtmp://nginx-rtmp:1935/live/stream
     volumes:
-      - ./logs:/app/logs
+      - logs_data:/app/logs
     restart: unless-stopped
     networks:
       - rtmp-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
 networks:
   rtmp-network:
     driver: bridge
 
 volumes:
-  hls:
-  recordings:
-  logs:
+  hls_data:
+  recordings_data:
+  logs_data:

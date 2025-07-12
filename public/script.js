@@ -338,5 +338,59 @@ window.addEventListener('error', (e) => {
     addLogEntry(`JavaScript error: ${e.message}`, 'error');
 });
 
+// Check RTMP status on startup
+function checkRtmpStatus() {
+    const rtmpStatusSpan = document.getElementById('rtmpStatus');
+    if (rtmpStatusSpan) {
+        rtmpStatusSpan.textContent = 'Checking...';
+        rtmpStatusSpan.style.color = '#f39c12';
+    }
+    
+    fetch('/api/rtmp-status')
+        .then(response => response.json())
+        .then(data => {
+            if (rtmpStatusSpan) {
+                if (data.status === 'available') {
+                    rtmpStatusSpan.textContent = 'Available';
+                    rtmpStatusSpan.style.color = '#27ae60';
+                    addLogEntry('RTMP input is available', 'success');
+                } else {
+                    rtmpStatusSpan.textContent = 'Unavailable';
+                    rtmpStatusSpan.style.color = '#e74c3c';
+                    addLogEntry(`RTMP input unavailable: ${data.error}`, 'error');
+                    if (data.suggestions) {
+                        data.suggestions.forEach(suggestion => {
+                            addLogEntry(`💡 ${suggestion}`, 'warning');
+                        });
+                    }
+                }
+            }
+        })
+        .catch(error => {
+            if (rtmpStatusSpan) {
+                rtmpStatusSpan.textContent = 'Error';
+                rtmpStatusSpan.style.color = '#e74c3c';
+            }
+            addLogEntry('Failed to check RTMP status', 'warning');
+        });
+}
+
+// Check system health
+function checkSystemHealth() {
+    fetch('/api/health')
+        .then(response => response.json())
+        .then(data => {
+            addLogEntry(`System status: ${data.status}`, data.status === 'ok' ? 'success' : 'warning');
+            if (data.services.ffmpeg === 'missing') {
+                addLogEntry('FFmpeg not found - install with: sudo apt-get install ffmpeg', 'error');
+            }
+        })
+        .catch(error => {
+            addLogEntry('Failed to check system health', 'warning');
+        });
+}
+
 // Initial log entry
 addLogEntry('Application initialized', 'info');
+checkSystemHealth();
+checkRtmpStatus();

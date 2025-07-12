@@ -139,18 +139,25 @@ A modern web-based RTMP streaming controller that receives streams from nginx an
    - Or test configurations: `./nginx-test.sh test`
    - Install nginx-rtmp module: `sudo apt-get install libnginx-mod-rtmp`
 
-3. **No preview showing:**
+3. **FFmpeg error: Connection refused (RTMP input unavailable):**
+   - Run full diagnostics: `./rtmp-test.sh`
+   - Check nginx-rtmp is running: `sudo systemctl status nginx`
+   - Test RTMP connection: `./rtmp-test.sh rtmp`
+   - Generate test stream: `./rtmp-test.sh stream`
+   - Check API status: `curl http://localhost:3000/api/rtmp-status`
+
+4. **No preview showing:**
    - Check if nginx is running and configured correctly
    - Verify RTMP stream is being sent to `rtmp://localhost:1935/live/stream`
    - Check browser console for HLS errors
    - Test nginx config: `./nginx-test.sh test`
 
-4. **Stream won't start:**
+5. **Stream won't start:**
    - Verify YouTube RTMP URL and stream key are correct
    - Check if ffmpeg is installed and accessible
    - Review server logs for error messages
 
-5. **Permission denied errors:**
+6. **Permission denied errors:**
    - Ensure nginx has write permissions to `/tmp/hls` and `/tmp/recordings`
    - Check if ports 1935, 3000, and 8080 are available
 
@@ -240,4 +247,15 @@ npm install
 
 # Apply full nginx config
 ./nginx-test.sh full
+
+# Test RTMP setup (comprehensive)
+./rtmp-test.sh
+
+# Test specific components
+./rtmp-test.sh nginx
+./rtmp-test.sh ffmpeg
+./rtmp-test.sh rtmp
+
+# Generate test stream
+./rtmp-test.sh stream
 ```
