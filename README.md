@@ -128,9 +128,10 @@ A modern web-based RTMP streaming controller that receives streams from nginx an
 
 ### Common Issues
 
-1. **Docker build fails with npm ci error:**
-   - Make sure `package-lock.json` exists (run `npm install` first)
-   - This has been fixed in the latest version
+1. **Docker build fails with npm integrity error:**
+   - Run `./build.sh fix-integrity` to clean cache and reinstall
+   - Or manually: `rm -rf node_modules package-lock.json && npm cache clean --force && npm install`
+   - Use `Dockerfile.multistage` for problematic environments
 
 2. **No preview showing:**
    - Check if nginx is running and configured correctly
@@ -200,8 +201,14 @@ For issues and questions:
 ## Quick Commands
 
 ```bash
+# Fix npm integrity issues
+./build.sh fix-integrity
+
 # Start with Docker
 docker-compose up -d
+
+# Build with multi-stage Docker (for problematic environments)
+./build.sh docker-multistage
 
 # View logs
 docker-compose logs -f
@@ -210,8 +217,11 @@ docker-compose logs -f
 docker-compose down
 
 # Start development server
-npm run dev
+npm start
 
 # Install dependencies
 npm install
+
+# Full build process
+./build.sh all
 ```

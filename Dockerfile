@@ -9,8 +9,9 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci --omit=dev
+# Clean npm cache and install dependencies
+RUN npm cache clean --force && \
+    npm install --omit=dev --verbose
 
 # Copy application code
 COPY . .
